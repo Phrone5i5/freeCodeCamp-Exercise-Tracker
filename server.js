@@ -19,6 +19,7 @@ app.get('/', (req, res) => {
 try {
   mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true });
   mongoose.connection.on('open', () => {
+    /* DELETE THE FOLLOWING TWO LINES IF YOU DO NOT WANT TO DROP YOUR ENTIRE DATABASE UPON RESTART  */
     mongoose.connection.db.dropDatabase();
     console.log('Database dropped...');
     app.listen(process.env.PUBLIC_PORT, () => {
