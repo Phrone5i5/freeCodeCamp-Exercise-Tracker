@@ -1,5 +1,4 @@
-### This is my solution to the
-### [freeCodeCamp Exercise Tracker](https://www.freecodecamp.org/learn/back-end-development-and-apis/back-end-development-and-apis-projects/exercise-tracker) project.
+### This is my solution to the [freeCodeCamp Exercise Tracker](https://www.freecodecamp.org/learn/back-end-development-and-apis/back-end-development-and-apis-projects/exercise-tracker) project.
  
 #### A live version of this app can be found [here](https://boilerplate-project-exercisetracker.phr0nesis.repl.co)
 
