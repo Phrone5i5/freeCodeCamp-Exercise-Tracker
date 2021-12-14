@@ -62,3 +62,9 @@ code {
   background-color: #292929;
   padding: 2px;
 }
+
+#explanation {
+  color: white;
+  margin: auto;
+  max-width: 900px;
+}
