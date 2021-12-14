@@ -19,8 +19,10 @@ app.get('/', (req, res) => {
 try {
   mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true });
   mongoose.connection.on('open', () => {
+    mongoose.connection.db.dropDatabase();
+    console.log('Database dropped...');
     app.listen(process.env.PUBLIC_PORT, () => {
-      console.log('*** Server started. ***');
+      console.log('*** Server started ***');
     });
   });
 } catch (e) {
@@ -33,16 +35,11 @@ const exerciseSchema = new Schema({
   username: { type: String, required: true },
   description: { type: String, required: true },
   duration: { type: Number, required: true },
-  date: { type: Date },
+  date: { type: Date, default: Date.now },
 });
 // Declaring models
 const User = mongoose.model('User', userSchema);
 const Exercise = mongoose.model('Exercise', exerciseSchema);
-
-/* Database interaction methods */
-// Submitting user input
-
-// Searching / modifying
 
 /* Routes */
 // Create a new user
@@ -55,7 +52,7 @@ app.post('/api/users', (req, res) => {
   userEntry
     .save()
     .then((entry) => {
-      console.log('Saving user entry');
+      console.log('Saving user entry...');
       res.json(entry);
     })
     .catch((err) => console.log(err));
@@ -69,14 +66,23 @@ app.post('/api/users/:_id/exercises', (req, res) => {
         username: user.username,
         description: req.body.description,
         duration: req.body.duration,
-        date: req.body.date ? new Date(req.body.date).toDateString() : new Date(Date.now()).toDateString(),
-        _id: user._id,
+        date: req.body.date,
       });
       exerciseEntry
         .save()
         .then((entry) => {
-          console.log('Saving exercise entry.');
-          res.json(entry);
+          Exercise.find({ username: user.username })
+            .then((exercises) => {
+              console.log('Saving exercise entry...');
+              res.json({
+                username: entry.username,
+                description: entry.description,
+                duration: entry.duration,
+                date: entry.date.toDateString(),
+                _id: user._id,
+              });
+            })
+            .catch((err) => console.log(err));
         })
         .catch((err) => console.log(err));
     })
@@ -85,32 +91,107 @@ app.post('/api/users/:_id/exercises', (req, res) => {
 
 // Get a list of all users
 app.get('/api/users', (req, res) => {
-  User.find({}).then(users => {
-    console.log('Sending list of all users.');
-    res.json(users);
-  }).catch(err => console.log(err));
+  User.find({})
+    .then((users) => {
+      console.log('Sending list of all users.');
+      res.json(users);
+    })
+    .catch((err) => console.log(err));
 });
 
 // Retrieve a full exercise log of given user is query string variables are undefined,
 // if they are, use them to set limits and return all logs in the timespan, and limited by the limit
-app.get('/api/users/:_id/logs/from?to?limit?', (req, res) => {
-  // Use req.params for id, and req.query for query string parameters
-  let id = req.params._id;
+app.get('/api/users/:id/logs', async (req, res, next) => {
+  if (!req.query.from && !req.query.to && !req.query.limit) {
+    // Return the user's info, as well as their exercise count and full log
+    await User.findOne({ _id: req.params.id })
+      .then((user) => {
+        Exercise.find({ username: user.username })
+          .then((exercises) => {
+            console.log('[FOUND] Returning user with added exercise count.');
+            let formattedExercises = exercises.map((exercise) => {
+              return {
+                username: exercise.username,
+                description: exercise.description,
+                duration: exercise.duration,
+                date: exercise.date.toDateString(),
+              };
+            });
+            res.json({
+              username: user.username,
+              count: formattedExercises,
+              log: formattedExercises,
+              id: user._id,
+            });
+          })
+          .catch((err) => console.log(err));
+      })
+      .catch((err) => console.log(err));
+  } else {
+    next();
+  }
 });
 
-// Retrieve a user with a count of exercises that belong to them
-app.get('/api/users/:id/logs', async (req, res) => {
-  const exerArr = await Exercise.find({ _id: req.params.id }).exec();
-  User.findOne({ _id: req.params.id }).then(user => {
-    console.log('[FOUND] Returning user with added exercise count.');
-    res.json({
-      username: user.username,
-      count: exerArr.length,
-      _id: user._id,
-    });
-  }).catch(err => console.log(err));
+app.get('/api/users/:_id/logs', async (req, res, next) => {
+  // Return the user's logs across a given time frame
+  if (req.query.from || req.query.to || req.query.limit) {
+    let from = req.query.from ? req.query.from : null,
+      to = req.query.to ? req.query.to : null,
+      limit = req.query.limit ? req.query.limit : null;
+    User.findOne({ _id: req.params._id })
+      .then((user) => {
+        Exercise.find({ username: user.username })
+          .sort({ date: 'asc' })
+          .then((exercises) => {
+            return exercises
+              .filter((exercise, i) => {
+                from ? (from = new Date(from).getTime()) : (from = 0);
+                to
+                  ? (to = new Date(to).getTime())
+                  : (to = exercises[exercises.length - 1].date.getTime());
+                limit ? (limit = limit) : (limit = exercises.length);
+                let exerciseDate = exercise.date.getTime();
+                if (
+                  exerciseDate >= from &&
+                  exerciseDate <= to &&
+                  i <= limit - 1
+                ) {
+                  return true;
+                } else {
+                  return false;
+                }
+              })
+              .map((exercise) => {
+                return {
+                  username: exercise.username,
+                  description: exercise.description,
+                  duration: exercise.duration,
+                  date: exercise.date.toDateString(),
+                };
+              });
+          })
+          .then((filteredLog) => {
+            filteredLogNoUser = filteredLog.map((exercise) => {
+              delete exercise.username;
+              return exercise;
+            });
+            return res.json({
+              username: filteredLog[0].username,
+              count: filteredLog.length,
+              _id: req.params.id,
+              log: filteredLogNoUser,
+            });
+          })
+          .catch((err) => console.log(err));
+      })
+      .catch((err) => console.log(err));
+  } else {
+    next();
+  }
 });
 
 const listener = app.listen(process.env.PORT, () => {
-  console.log('*** Your app is listening on port ' + listener.address().port + " ***");
+  console.log(
+    '*** Your app is listening on port ' + listener.address().port + ' ***'
+  );
 });
