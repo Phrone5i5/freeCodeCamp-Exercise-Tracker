@@ -68,3 +68,9 @@ code {
   margin: auto;
   max-width: 900px;
 }
+
+#author {
+  padding-top: 100px;
+  color: black;
+  opacity: 0.5;
+}
