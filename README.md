@@ -2,7 +2,7 @@
 (freeCodeCamp Exercise Tracker)[https://www.freecodecamp.org/learn/back-end-development-and-apis/back-end-development-and-apis-projects/exercise-tracker]
 ### project.
 
-#### A live version of this app can be found (here)[https://boilerplate-project-exercisetracker.phr0nesis.repl.co]
+#### A live version of this app can be found [here](https://boilerplate-project-exercisetracker.phr0nesis.repl.co)
 
 This repository requires a .env file to function correctly, specifically it needs PORT and MONGO_URI variables.
 This project was tested using PORT=3000.
