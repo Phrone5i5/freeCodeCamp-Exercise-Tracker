@@ -121,10 +121,10 @@ app.get('/api/users/:id/logs', async (req, res, next) => {
             res.json({
               username: formattedExercises[0].username,
               count: formattedExercises.length,
-              log: formattedExercises.map(exercise => {
-                 delete exercise.username
-                 return exercise;
-               }),
+              log: formattedExercises.map((exercise) => {
+                delete exercise.username;
+                return exercise;
+              }),
               id: user._id,
             });
           })
@@ -149,6 +149,7 @@ app.get('/api/users/:_id/logs', async (req, res, next) => {
         Exercise.find({ username: user.username })
           .sort({ date: 'asc' })
           .then((exercises) => {
+            let count = limit;
             return exercises
               .filter((exercise, i) => {
                 from ? (from = new Date(from).getTime()) : (from = 0);
@@ -157,11 +158,8 @@ app.get('/api/users/:_id/logs', async (req, res, next) => {
                   : (to = exercises[exercises.length - 1].date.getTime());
                 limit ? (limit = limit) : (limit = exercises.length);
                 let exerciseDate = exercise.date.getTime();
-                if (
-                  exerciseDate >= from &&
-                  exerciseDate <= to &&
-                  i <= limit - 1
-                ) {
+                if (exerciseDate >= from && exerciseDate <= to && count > 0) {
+                  count--;
                   return true;
                 } else {
                   return false;
@@ -180,7 +178,7 @@ app.get('/api/users/:_id/logs', async (req, res, next) => {
               username: userProfile.username,
               count: filteredLog.length,
               _id: userProfile._id,
-              log: filteredLog
+              log: filteredLog,
             });
           })
           .catch((err) => console.log(err));
