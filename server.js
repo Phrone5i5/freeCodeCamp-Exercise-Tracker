@@ -119,9 +119,12 @@ app.get('/api/users/:id/logs', async (req, res, next) => {
               };
             });
             res.json({
-              username: user.username,
-              count: formattedExercises,
-              log: formattedExercises,
+              username: formattedExercises[0].username,
+              count: formattedExercises.length,
+              log: formattedExercises.map(exercise => {
+                 delete exercise.username
+                 return exercise;
+               }),
               id: user._id,
             });
           })
@@ -139,8 +142,10 @@ app.get('/api/users/:_id/logs', async (req, res, next) => {
     let from = req.query.from ? req.query.from : null,
       to = req.query.to ? req.query.to : null,
       limit = req.query.limit ? req.query.limit : null;
+    let userProfile;
     User.findOne({ _id: req.params._id })
       .then((user) => {
+        userProfile = user;
         Exercise.find({ username: user.username })
           .sort({ date: 'asc' })
           .then((exercises) => {
@@ -164,7 +169,6 @@ app.get('/api/users/:_id/logs', async (req, res, next) => {
               })
               .map((exercise) => {
                 return {
-                  username: exercise.username,
                   description: exercise.description,
                   duration: exercise.duration,
                   date: exercise.date.toDateString(),
@@ -172,15 +176,11 @@ app.get('/api/users/:_id/logs', async (req, res, next) => {
               });
           })
           .then((filteredLog) => {
-            filteredLogNoUser = filteredLog.map((exercise) => {
-              delete exercise.username;
-              return exercise;
-            });
             return res.json({
-              username: filteredLog[0].username,
+              username: userProfile.username,
               count: filteredLog.length,
-              _id: req.params.id,
-              log: filteredLogNoUser,
+              _id: userProfile._id,
+              log: filteredLog
             });
           })
           .catch((err) => console.log(err));
