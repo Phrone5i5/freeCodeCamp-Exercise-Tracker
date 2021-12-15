@@ -143,14 +143,12 @@ app.get('/api/users/:_id/logs', async (req, res, next) => {
       to = req.query.to ? req.query.to : null,
       limit = req.query.limit ? req.query.limit : null;
     let userProfile;
-    let totalCount;
     User.findOne({ _id: req.params._id })
       .then((user) => {
         userProfile = user;
         Exercise.find({ username: user.username })
           .sort({ date: 'asc' })
           .then((exercises) => {
-            totalCount = exercises.length;
             let count = limit;
             return exercises
               .filter((exercise, i) => {
