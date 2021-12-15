@@ -149,17 +149,15 @@ app.get('/api/users/:_id/logs', async (req, res, next) => {
         Exercise.find({ username: user.username })
           .sort({ date: 'asc' })
           .then((exercises) => {
-            let count = limit;
+            let count = 0;
             return exercises
               .filter((exercise, i) => {
                 from ? (from = new Date(from).getTime()) : (from = 0);
-                to
-                  ? (to = new Date(to).getTime())
-                  : (to = exercises[exercises.length - 1].date.getTime());
+                to ? (to = new Date(to).getTime()) : (to = exercises[exercises.length - 1].date.getTime());
                 limit ? (limit = limit) : (limit = exercises.length);
                 let exerciseDate = exercise.date.getTime();
-                if (exerciseDate >= from && exerciseDate <= to && count > 0) {
-                  count--;
+                if (exerciseDate >= from && exerciseDate <= to && count <= limit) {
+                  count++;
                   return true;
                 } else {
                   return false;
