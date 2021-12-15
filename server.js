@@ -178,7 +178,7 @@ app.get('/api/users/:_id/logs', async (req, res, next) => {
           .then((filteredLog) => {
             return res.json({
               username: userProfile.username,
-              count: totalCount,
+              count: filteredLog.length,
               _id: userProfile._id,
               log: filteredLog,
             });
